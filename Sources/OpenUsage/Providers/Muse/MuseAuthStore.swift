@@ -335,6 +335,11 @@ struct MuseAuthStore: Sendable {
             if let cookie = MuseBinaryCookies.cookie(named: Self.cookieName, domainHint: Self.cookieDomainHint, in: data) {
                 return .found(cookie)
             }
+            // Present but unparseable: a corrupt store must read as unreadable (with the
+            // Full Disk Access guidance), never as "not logged in".
+            if !MuseBinaryCookies.isWellFormed(data) {
+                sawUnreadable = true
+            }
         }
         return sawUnreadable ? .unreadable : .absent
     }

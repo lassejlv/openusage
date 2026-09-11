@@ -3,7 +3,6 @@ import Foundation
 enum MuseCookieError: Error, Equatable {
     case unsupportedVersion
     case decryptionFailed
-    case malformedStore
 }
 
 /// Chromium cookie decryption for the macOS Keychain scheme: the cookie value is
@@ -64,6 +63,14 @@ enum MuseBinaryCookies {
             return value
         }
         return nil
+    }
+
+    /// Whether `data` is at least structurally a binarycookies store (magic + sane page
+    /// count). Lets callers tell "no such cookie" apart from "store corrupt".
+    static func isWellFormed(_ data: Data) -> Bool {
+        guard data.count >= 8, data[0..<4] == Data("cook".utf8) else { return false }
+        let pageCount = Int(data[u32BE: 4])
+        return pageCount > 0 && pageCount < 10_000 && data.count >= 8 + 4 * pageCount
     }
 
     static func allCookies(_ data: Data) -> [(url: String, name: String, value: String)] {

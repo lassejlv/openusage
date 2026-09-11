@@ -35,8 +35,15 @@ enum MuseUsageMapper {
         // The tier repeats the provider name ("Muse Code High Usage" beside "Muse"), so
         // cut the redundant prefix. Unknown shapes pass through untouched.
         var plan = (quota["tier"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
-        if let tier = plan, tier.lowercased().hasPrefix("muse code ") {
-            plan = String(tier.dropFirst("muse code ".count)).trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty ?? tier
+        if let tier = plan {
+            // Cut the redundant prefix ("Muse Code High Usage" → "High Usage"); a bare tier
+            // leaves no plan rather than a "Muse Muse Code" header. Unknown shapes pass through.
+            let lower = tier.lowercased()
+            if lower == "muse code" {
+                plan = nil
+            } else if lower.hasPrefix("muse code ") {
+                plan = String(tier.dropFirst("muse code ".count)).trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
+            }
         }
         return MuseMappedUsage(
             plan: plan,

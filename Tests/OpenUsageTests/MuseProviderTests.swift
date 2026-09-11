@@ -301,10 +301,17 @@ final class MuseAuthStoreTests: XCTestCase {
         XCTAssertTrue(store.browserCookiePresent())
     }
 
-    func testSafariIgnoresUnparseableStore() {
+    func testSafariCorruptStoreIsUnreadable() {
         let store = museStore(binary: { _ in Data("not-cookies".utf8) })
-        XCTAssertEqual(store.loadBrowserCookie(), .absent)
+        XCTAssertEqual(store.loadBrowserCookie(), .unreadable)
         XCTAssertFalse(store.browserCookiePresent())
+    }
+
+    func testSafariWellFormedStoreWithoutCookieIsAbsent() {
+        let blob = binarycookiesBlob([(url: ".example.com", name: "other", value: "nope")])
+        XCTAssertTrue(MuseBinaryCookies.isWellFormed(blob))
+        let store = museStore(binary: { _ in blob })
+        XCTAssertEqual(store.loadBrowserCookie(), .absent)
     }
 }
 
@@ -398,7 +405,8 @@ final class MuseUsageMapperTests: XCTestCase {
         XCTAssertEqual(try plan(for: "Muse Code High Usage"), "High Usage")
         XCTAssertEqual(try plan(for: "muse code lower"), "lower")
         XCTAssertEqual(try plan(for: "Something Else"), "Something Else")
-        XCTAssertEqual(try plan(for: "Muse Code"), "Muse Code")
+        XCTAssertNil(try plan(for: "Muse Code"))
+        XCTAssertEqual(try plan(for: "Muse Coder Pro"), "Muse Coder Pro")
     }
 
     func testMissingBlobMeansSessionExpired() {
