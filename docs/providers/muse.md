@@ -31,4 +31,4 @@ Reading another app's cookie store needs Full Disk Access for OpenUsage (System 
 
 ## Under the hood
 
-`GET https://dev.meta.ai/usage/` with browser-like headers (a bare request gets an error page), following the redirect to the team's `team_id`/`project_id` URL. The page embeds the full quota result in its `LLMDCUsageQuery` preloader data, so no GraphQL call is needed. Quota numbers arrive as weighted-used/weighted-limit pairs and are reported as percent used.
+`GET https://dev.meta.ai/usage/` with the session cookie plus `Accept: text/html` (a request without it gets an error page or a variant without quota data), following the redirect to the team's `team_id`/`project_id` URL. The page embeds the full quota result in its `LLMDCUsageQuery` preloader data, so no GraphQL call is needed. Quota numbers arrive as weighted-used/weighted-limit pairs and are reported as percent used.

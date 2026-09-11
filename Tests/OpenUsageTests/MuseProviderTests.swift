@@ -456,11 +456,12 @@ final class MuseProviderTests: XCTestCase {
         XCTAssertEqual(http.requests.count, 1)
         XCTAssertEqual(http.requests.first?.url.absoluteString, "https://dev.meta.ai/usage/")
         XCTAssertEqual(http.requests.first?.headers["Cookie"], "llm_sess=manual-cookie")
-        // The usage page only serves the app to browser-like requests — lock the headers a
-        // bare request would miss (verified: without these the server returns an error page).
-        XCTAssertTrue(http.requests.first?.headers["User-Agent"]?.contains("Chrome") == true)
-        XCTAssertEqual(http.requests.first?.headers["Sec-Fetch-Dest"], "document")
-        XCTAssertEqual(http.requests.first?.headers["Sec-Fetch-Site"], "same-origin")
+        // Bisected live: Accept: text/html is the only header the page needs beyond the
+        // cookie — without it the server returns an error page or a quota-less variant.
+        XCTAssertEqual(
+            http.requests.first?.headers["Accept"],
+            "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+        )
     }
 
     func testRefreshFallsThroughToBrowserCookieAfterRejection() async {
