@@ -100,6 +100,7 @@ enum ProviderMarks {
         case "codex": return "circle.hexagongrid"
         case "cursor": return "cube"
         case "grok": return "bolt.fill"
+        case "muse": return "infinity"
         case "ollama": return "cloud"
         case "opencode": return "chevron.left.forwardslash.chevron.right"
         case "openrouter": return "point.3.connected.trianglepath.dotted"
@@ -109,13 +110,18 @@ enum ProviderMarks {
     }
 
     private static func extractD(_ svg: String) -> String? {
-        var values: [String] = []
-        var searchStart = svg.startIndex
-        while let start = svg[searchStart...].range(of: "d=\"") {
-            let rest = svg[start.upperBound...]
-            guard let end = rest.firstIndex(of: "\"") else { break }
-            values.append(String(rest[..<end]))
-            searchStart = end
+        // `d` on `<path>` elements only: `id="…"` (gradient defs) also contains `d="`,
+        // and must not be parsed as path data. Every shipped mark uses ` d="` on its
+        // paths, so this matches exactly what the old naive search found for them.
+        guard let regex = try? NSRegularExpression(pattern: #"<path\b[^>]*?\sd="([^"]*)""#) else {
+            return nil
+        }
+        let range = NSRange(svg.startIndex..., in: svg)
+        let values = regex.matches(in: svg, range: range).compactMap { match -> String? in
+            guard match.numberOfRanges == 2, let valueRange = Range(match.range(at: 1), in: svg) else {
+                return nil
+            }
+            return String(svg[valueRange])
         }
         return values.isEmpty ? nil : values.joined(separator: " ")
     }
